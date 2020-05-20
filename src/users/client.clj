@@ -12,22 +12,38 @@
 (s/def ::response (s/or :ok (s/keys :req [::result])
                         :err (s/keys :req [::error])))
 
+(s/fdef request-token
+  :ret ::response)
 
-(s/conform ::service-names [:national-insurance :self-assessment :mtd-income-tax :customs-services :mtd-vat])
-
-(gen/sample (s/gen ::request))
+(defn request-token []
+  (let [options {
+                 :method :post
+                 :user-agent "User-Agent Anudis"
+                 :headers {"Content-Type" "application/x-www-form-urlencoded"}
+                 :form-params {"client_id" "1mSebFWgzHoxglgYrrRYIjB4mEeW" "client_secret" "81911b7e-3c2e-4546-b4da-40f324fcebce" "grant_type" "client_credentials"}
+                 :keepalive 3000
+                 :timeout 5000
+                 :filter (client/max-body-filter (* 1024 100)) ; reject if body is more than 100k
+                 :insecure? false
+                 :follow-redirects false
+                 }
+        {:keys [body error]} @(client/post "https://test-api.service.hmrc.gov.uk/oauth/token" options)]
+    (if error
+      (println "Failed, exception is " error)
+      (str body))))
 
 (s/fdef consume-api
   :args (s/cat :body ::request)
   :ret ::response)
 
 (defn consume-api [body]
-  (let [options {
+  (let [token ((json/read-str (request-token)) "access_token")
+        options {
                  :method :post
                  :user-agent "User-Agent Anudis"
                  :headers {"Accept" "application/vnd.hmrc.1.0+json"
                            "Content-Type" "application/json"
-                           "Authorization" "Bearer fbe2a920bbf0c00d51fa778b5568ed7e"}
+                           "Authorization" (str "Bearer " token)}
                  :body (json/write-str body) ; use this for content-type json
                  :keepalive 3000
                  :timeout 5000
@@ -35,9 +51,9 @@
                  :insecure? false
                  :follow-redirects false
                  }
-        {:keys [body error]} @(client/post "https://test-api.service.hmrc.gov.uk/create-test-user/individuals" options)]
+        {:keys [status headers body error]} @(client/post "https://test-api.service.hmrc.gov.uk/create-test-user/individuals" options)]
     (if error
-      (str "Failed, exception is " error)
+      (println "Failed, exception is " error)
       (str body))))
 
 (s/fdef create-user
@@ -49,13 +65,3 @@
     (or result error)))
 
 (def body {:serviceNames [:national-insurance :self-assessment :mtd-income-tax :customs-services :mtd-vat]})
-
-(def a {:serviceNames [:national-insurance :self-assessment :mtd-income-tax :customs-services :mtd-vat]})
-
-(s/valid? ::request body)
-
-(create-user body)
-
-(consume-api body)
-
-(json/write-str body)
