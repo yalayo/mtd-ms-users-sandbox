@@ -5,7 +5,7 @@
             [clojure.spec.gen.alpha :as gen]))
 
 (s/def ::name string?)
-(s/def ::service-names (s/coll-of keyword? :kind vector?))
+(s/def ::serviceNames (s/coll-of keyword? :kind vector?))
 (s/def ::request (s/keys :req-un [::serviceNames]))
 (s/def ::result (s/coll-of string? :gen-max 3))
 (s/def ::error int?)
