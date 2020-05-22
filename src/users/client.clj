@@ -5,15 +5,12 @@
             [clojure.spec.gen.alpha :as gen]))
 
 (s/def ::name string?)
-(s/def ::serviceNames (s/coll-of keyword? :kind vector?))
+(s/def ::serviceNames (s/coll-of string? :kind vector?))
 (s/def ::request (s/keys :req-un [::serviceNames]))
 (s/def ::result (s/coll-of string? :gen-max 3))
 (s/def ::error int?)
 (s/def ::response (s/or :ok (s/keys :req [::result])
                         :err (s/keys :req [::error])))
-
-(s/fdef request-token
-  :ret ::response)
 
 (defn request-token []
   (let [options {
@@ -32,9 +29,7 @@
       (println "Failed, exception is " error)
       (str body))))
 
-(s/fdef consume-api
-  :args (s/cat :body ::request)
-  :ret ::response)
+(def b {:serviceNames ['national-insurance 'self-assessment 'mtd-income-tax 'customs-services 'mtd-vat]})
 
 (defn consume-api [body]
   (let [token ((json/read-str (request-token)) "access_token")
@@ -56,12 +51,11 @@
       (println "Failed, exception is " error)
       (str body))))
 
-(s/fdef create-user
-  :args (s/cat :body ::request)
-  :ret (s/or :ok ::result :err ::error))
 
-(defn create-user [body]
-  (let [{::keys [result error]} (consume-api body)]
-    (or result error)))
+(defn create-user []
+  (json/read-str (consume-api b)))
 
-(def body {:serviceNames [:national-insurance :self-assessment :mtd-income-tax :customs-services :mtd-vat]})
+
+;(json/read-str (create-user))
+
+;(create-user)

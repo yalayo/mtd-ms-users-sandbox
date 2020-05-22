@@ -4,9 +4,11 @@
             [uswitch.lambada.core :refer [deflambdafn]]
             [users.client :as c]))
 
+
 (deflambdafn com.anudis.hmrc.sandbox.GenerateUser
   [in out ctx]
-  (let [in (json/read (io/reader in) :key-fn keyword)
-        response (c/create-user (get in :data))]
+  (let [response (c/create-user)]
+    (println "OUTPUT" response)
     (with-open [w (io/writer out)]
       (json/write response w))))
+
